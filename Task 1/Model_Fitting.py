@@ -39,10 +39,11 @@ config.gpu_options.allow_growth = True
 sess = tf.compat.v1.Session(config=config)
 KTF.set_session(sess)
 
-data_path = 'Skip_Data/'
-#data_path = 'D:/Prof Amin docs/task 1/data/track_features/'
+# data_path = 'Skip_Data/'
+data_path = 'C:/Users/13528/Task 1/Skip Data/'
 
 ###############################################################################
+
 
 batch_size = 1500 # skip_net_glove_max_mtsk_more_layer_best
 
@@ -54,7 +55,8 @@ batch_size = 2200 # skip_net_glove_max_mtsk_more_layer_best_v3
 
 batch_size = 2200 # skip_net_glove_max_mtsk_more_layer_best_v4
 
-#data_path = 'Skip_Data/'
+# data_path = 'Skip_Data/'
+data_path = 'C:/Users/13528/Task 1/Skip Data/'
 
 le_track_id = joblib.load('le_track_id.pkl')
 
@@ -89,8 +91,8 @@ spotify_song_array = np.concatenate((song_zero_embedding,spotify_song_array),axi
 
 # Load Glove Embedding
 
-spotify_song_array_glove = hkl.load('song_embedding_matrix_150.hkl') 
-#giving error no embedding
+# spotify_song_array_glove = hkl.load('song_embedding_matrix_150.hkl')
+spotify_song_array_glove = joblib.load('song_embedding_matrix_150.pkl')
 
 gc.collect()
 
@@ -99,22 +101,48 @@ spotify_song_array = np.concatenate((spotify_song_array,spotify_song_array_glove
 # If the previous steps are done correctly, the embedding matrix should be of size (3706389, 179)
 
 #print(spotify_song_array.shape)
-#assert spotify_song_array.shape==(3706389, 179)
+assert spotify_song_array.shape==(3706389, 179)
+
+###############################################################################
+
+# Generating the pickle files not present. I have used only the first train file.
 
 #import joblib
 #joblib.dump(le_context_type, data_path+'le_context_type.pkl')
 #joblib.dump(le_reason_start, data_path+'le_reason_start.pkl')
 #joblib.dump(le_reason_end, data_path+'le_reason_end.pkl')
 
-## no file by these names!
+train_0 = pd.read_csv('C:/Users/13528/Task 1/train_fold/log_0_20180715_000000000000.csv')
+#print(train_0.columns)
+
+le = LabelEncoder()
+train_0['context_type'] = le.fit_transform(train_0['context_type'])
+#print(train_0['context_type'])
+
+train_0['hist_user_behavior_reason_start'] = le.fit_transform(train_0['hist_user_behavior_reason_start'])
+#print(train_0['hist_user_behavior_reason_start']) 
+
+train_0['hist_user_behavior_reason_end'] = le.fit_transform(train_0['hist_user_behavior_reason_end'])
+#print(train_0['hist_user_behavior_reason_end']) 
+
+le_context_type = train_0['context_type']
+le_reason_start = train_0['hist_user_behavior_reason_start']
+le_reason_end = train_0['hist_user_behavior_reason_end']
+
+joblib.dump(le_context_type, data_path+'le_context_type.pkl')
+joblib.dump(le_reason_start, data_path+'le_reason_start.pkl')
+joblib.dump(le_reason_end, data_path+'le_reason_end.pkl')
 
 le_context_type = joblib.load(data_path+'le_context_type.pkl')
 le_reason_start = joblib.load(data_path+'le_reason_start.pkl')
 le_reason_end = joblib.load(data_path+'le_reason_end.pkl')
 
-n_context_type = len(le_context_type.classes_) + 1
-n_reason_start = len(le_reason_start.classes_) + 1
-n_reason_end = len(le_reason_end.classes_) + 1
+# n_context_type = len(le_context_type.classes_) + 1
+# n_reason_start = len(le_reason_start.classes_) + 1
+# n_reason_end = len(le_reason_end.classes_) + 1
+n_context_type = len(le_context_type.unique())
+n_reason_start = len(le_reason_start.unique())
+n_reason_end = len(le_reason_end.unique())
 
 ###############################################################################
 
@@ -131,9 +159,12 @@ def ProcessSessionCate(df, if_gen = 0, batch_size = batch_size, sample = 0):
     df['date_gap'] = df['date_gap'].dt.days
     
     
-    df['context_type'] = le_context_type.transform(df['context_type'])
-    df['hist_user_behavior_reason_start'] = le_reason_start.transform(df['hist_user_behavior_reason_start'])
-    df['hist_user_behavior_reason_end'] = le_reason_end.transform(df['hist_user_behavior_reason_end'])
+#     df['context_type'] = le_context_type.transform(df['context_type'])
+#     df['hist_user_behavior_reason_start'] = le_reason_start.transform(df['hist_user_behavior_reason_start'])
+#     df['hist_user_behavior_reason_end'] = le_reason_end.transform(df['hist_user_behavior_reason_end'])
+    df['context_type'] = le.fit_transform(df['context_type'])
+    df['hist_user_behavior_reason_start'] = le.fit_transform(df['hist_user_behavior_reason_start'])
+    df['hist_user_behavior_reason_end'] = le.fit_transform(df['hist_user_behavior_reason_end'])
     session_cols = ['session_id', 'session_position', 'session_length', 'track_id_clean',
                     'skip_1', 'skip_2', 'skip_3', 'not_skipped', 'context_switch',
                     'no_pause_before_play', 'short_pause_before_play',
@@ -252,16 +283,16 @@ def ProcessSessionCate(df, if_gen = 0, batch_size = batch_size, sample = 0):
 
     return input_data, output_data, input_data_context_id, input_data_start_id, input_data_end_id,\
            input_data_id, output_data_id, output_data_target, output_date_id
-           
+          
 ###############################################################################
 
 
 # Specify the train and validation files.
 train_files = glob.glob(data_path + '*.csv.parquet')
 #len(train_files)
-valid_files = ['Skip_Data/log_0_20180715_000000000000.csv.parquet']
+valid_files = [data_path +'log_0_20180715_000000000000.csv.parquet']
 train_files = list(set(train_files)-set(valid_files))
-#print(len(train_files))
+#len(train_files)
 
 ###############################################################################
 
@@ -279,7 +310,7 @@ def train_generate(batch_size=batch_size, shuffle=True):
             
             tmp_data = pd.read_parquet(train_files[i])
             input_data_i, output_data_i, input_data_context_id_i, input_data_start_id_i, input_data_end_id_i, \
-            input_data_id_i, output_data_id_i, output_data_target_i = ProcessSessionCate(tmp_data,if_gen = 1, batch_size = batch_size, sample = 1)      
+            input_data_id_i, output_data_id_i, output_data_target_i, output_date_id_i = ProcessSessionCate(tmp_data,if_gen = 1, batch_size = batch_size, sample = 1)      
             
             n_round = int(input_data_i.shape[0]/batch_size)            
             
@@ -306,8 +337,8 @@ count = 0
 for file in valid_files:
     tmp_data = pd.read_parquet(file)
     input_data_i, output_data_i, input_data_context_id_i, input_data_start_id_i, input_data_end_id_i, \
-    input_data_id_i, output_data_id_i, output_data_target_i = ProcessSessionCate(tmp_data)
-
+    input_data_id_i, output_data_id_i, output_data_target_i, output_date_id_i = ProcessSessionCate(tmp_data)
+    
     if count == 0:
         valid_input = input_data_i
         valid_output = output_data_i
@@ -330,6 +361,8 @@ for file in valid_files:
     count  = count + 1
     
 input_fea_dim = valid_input.shape[2]
+
+# Constructing the validation set (cont.)
 
 X_valid = {
    'context': valid_input_data_context_id,
@@ -512,7 +545,7 @@ def skip_model_5_mtsk_att(cell_size = 350):
     model.summary()
     return model
 
-checkpoint = ModelCheckpoint('Data/skip_net_glove_max_mtsk_more_layer_best_v6.hdf5', monitor='val_binary_accuracy', verbose=1, save_best_only=True, mode='auto')
+checkpoint = ModelCheckpoint('C:/Users/13528/Task 1/Data/skip_net_glove_max_mtsk_more_layer_best_v6.hdf5', monitor='val_binary_accuracy', verbose=1, save_best_only=True, mode='auto')
 
 #K.clear_session()
 
@@ -521,6 +554,17 @@ model = skip_model_5_mtsk_att()
 reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=4, 
                                    verbose=1, mode='auto', epsilon=0.0001, cooldown=5, min_lr=0.0001)
 
-model.fit_generator(train_generate(), steps_per_epoch=3000, epochs=300, verbose=1,
-                        validation_data=(X_valid,Y_valid),max_q_size=35,
+# model.fit_generator(train_generate(), steps_per_epoch=3000, epochs=300, verbose=1,
+#                         validation_data=(X_valid,Y_valid),max_q_size=35,
+#                       callbacks = [mstk_ndcg_callback(),reduceLROnPlat,checkpoint])
+
+# model.fit_generator(train_generate(), steps_per_epoch=3000, epochs=300, verbose=1,
+#                         validation_data=(X_valid,Y_valid),
+#                       callbacks = [mstk_ndcg_callback(),reduceLROnPlat,checkpoint])
+# model.fit(train_generate(), steps_per_epoch=3000, epochs=300, verbose=1,
+#                         validation_data=(X_valid,Y_valid),
+#                       callbacks = [mstk_ndcg_callback(),reduceLROnPlat,checkpoint])
+model.fit(train_generate(), steps_per_epoch=100, epochs=5, verbose=1,
+                        validation_data=(X_valid,Y_valid),
                       callbacks = [mstk_ndcg_callback(),reduceLROnPlat,checkpoint])
+model.save("skip_net_glove_max_mtsk_more_layer_best_v6.h5")

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
 
-@author: Swarnabha
-"""
 
 import numpy as np
 import pandas as pd
@@ -11,19 +8,23 @@ import os
 import glob
 import hickle as hkl
 from tqdm import tqdm
-from scipy.special import logit, expit
+import joblib
 
-test_data_path = 'test_pred/'
+# test_data_path = 'test_pred/'
+test_data_path = 'C:/Users/13528/Task 1/test_pred/'
 
-data_path = 'Skip_Data/'
+# data_path = 'Skip_Data/'
+data_path = 'C:/Users/13528/Task 1/Skip Data/'
 
 test_files = glob.glob(test_data_path + 'pred_*.parquet')
-#print(len(test_files))
+len(test_files)
 test_files = list(np.sort(test_files))
 
 #print(test_files)
 
-with open('submission_0108.txt', 'w') as f:
+from scipy.special import logit, expit
+
+with open('submission_0108_new.txt', 'w') as f:
     for item in tqdm(test_files):
         #data =0.35*hkl.load(data_path+item[15:23]+'_y_pred_mtsk.hkl') + 0.33*hkl.load(data_path+item[15:23]+'_y_pred_max.hkl') + 0.31*hkl.load(data_path+item[15:23]+'_y_pred.hkl')
        # data = 0.32*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_bn.hkl')+0.34*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v2.hkl')+0.34*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger.hkl')
@@ -31,7 +32,9 @@ with open('submission_0108.txt', 'w') as f:
         #data = 0.2*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_bn.hkl')+0.2*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v2.hkl')+0.2*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger.hkl')+0.2*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v3.hkl')+0.2*hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v4.hkl')
        # data = expit(0.2*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_bn.hkl'))+0.2*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v2.hkl'))+0.2*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger.hkl'))+0.2*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v3.hkl'))+0.2*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v4.hkl')))
         #data = expit(0.166*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_bn.hkl'))+0.166*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v2.hkl'))+0.167*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger.hkl'))+0.167*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v3.hkl'))+0.167*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v4.hkl'))+0.167*logit(hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v6.hkl')))
-        data = hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v6.hkl')
+#         data = hkl.load(data_path+item[15:23]+'_y_pred_mtsk_larger_v6.hkl')
+#         data = hkl.load(data_path+item[37:45]+'_y_pred_mtsk_larger_v6.hkl')
+        data = joblib.load(data_path+item[37:45]+'_y_pred_mtsk_larger_v6.pkl')
 
         pred = data*0
         pred[data>0.5] = 1        

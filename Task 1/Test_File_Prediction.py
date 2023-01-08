@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 10 19:50:31 2022
 
-@author: Swarnabha
-"""
 
 import numpy as np
 import pandas as pd
@@ -14,10 +10,11 @@ from numpy import random
 from sklearn.preprocessing import MinMaxScaler
 
 from sklearn.preprocessing import LabelEncoder
-#from sklearn.externals import joblib
+# from sklearn.externals import joblib
 import joblib
 
 from keras.models import Model
+# from keras.optimizers import Adam, SGD
 from tensorflow.keras.optimizers import Adam, SGD
 from keras import initializers, regularizers, constraints
 from keras.layers import Bidirectional, GlobalMaxPooling1D, Dense, Embedding
@@ -27,7 +24,7 @@ import tensorflow as tf
 from keras.models import Sequential
 from keras.layers.core import Reshape
 import keras.backend as K
-#from keras.engine.topology import Layer
+# from keras.engine.topology import Layer
 from tensorflow.keras.layers import Layer
 from keras.layers import LSTM, Dense
 from tqdm import tqdm
@@ -36,20 +33,25 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, Callback, ReduceLROn
 
 
 import keras.backend as KTF
-#import tensorflow as tf
+import tensorflow as tf
 #os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# config = tf.ConfigProto()
 config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
+# sess = tf.Session(config=config)
 sess = tf.compat.v1.Session(config=config)
 KTF.set_session(sess)
 
-test_data_path = 'test_pred/'
+# test_data_path = 'test_pred/'
+test_data_path = 'C:/Users/13528/Task 1/test_pred/'
 
 ###############################################################################
 
+
 batch_size = 1000
 
-data_path = 'Skip_Data/'
+# data_path = 'Skip_Data/'
+data_path = 'C:/Users/13528/Task 1/Skip Data/'
 
 le_track_id = joblib.load('le_track_id.pkl')
 
@@ -86,7 +88,8 @@ spotify_song_array = np.concatenate((song_zero_embedding,spotify_song_array),axi
 #print(spotify_song_array.shape)
 #assert spotify_song_array.shape==(3706389, 179)
 
-spotify_song_array_glove = hkl.load('song_embedding_matrix_150.hkl')
+#spotify_song_array_glove = hkl.load('song_embedding_matrix_150.hkl')
+spotify_song_array_glove = joblib.load('song_embedding_matrix_150.pkl')
 
 gc.collect()
 
@@ -97,10 +100,12 @@ le_context_type = joblib.load(data_path+'le_context_type.pkl')
 le_reason_start = joblib.load(data_path+'le_reason_start.pkl')
 le_reason_end = joblib.load(data_path+'le_reason_end.pkl')
 
-n_context_type = len(le_context_type.classes_) + 1
-n_reason_start = len(le_reason_start.classes_) + 1
-n_reason_end = len(le_reason_end.classes_) + 1
-
+# n_context_type = len(le_context_type.classes_) + 1
+# n_reason_start = len(le_reason_start.classes_) + 1
+# n_reason_end = len(le_reason_end.classes_) + 1
+n_context_type = len(le_context_type.unique())
+n_reason_start = len(le_reason_start.unique())
+n_reason_end = len(le_reason_end.unique())
 
 test_files = glob.glob(test_data_path + 'pred_*.parquet')
 #print(len(test_files))
@@ -111,6 +116,7 @@ test_files = list(np.sort(test_files))
 #print(test_files)
 
 ###############################################################################
+
 
 def TestPredProcessSessionCate(pred_df):
     session_cols = ['session_id', 'session_position', 'session_length', 'track_id_clean']
@@ -144,9 +150,12 @@ def TestPredProcessSessionCate(pred_df):
 
 
 def TestPreHistSessionCate(pre_hist_df):
-    pre_hist_df['context_type'] = le_context_type.transform(pre_hist_df['context_type'])
-    pre_hist_df['hist_user_behavior_reason_start'] = le_reason_start.transform(pre_hist_df['hist_user_behavior_reason_start'])
-    pre_hist_df['hist_user_behavior_reason_end'] = le_reason_end.transform(pre_hist_df['hist_user_behavior_reason_end'])
+#     pre_hist_df['context_type'] = le_context_type.transform(pre_hist_df['context_type'])
+#     pre_hist_df['hist_user_behavior_reason_start'] = le_reason_start.transform(pre_hist_df['hist_user_behavior_reason_start'])
+#     pre_hist_df['hist_user_behavior_reason_end'] = le_reason_end.transform(pre_hist_df['hist_user_behavior_reason_end'])
+    pre_hist_df['context_type'] = le.fit_transform(pre_hist_df['context_type'])
+    pre_hist_df['hist_user_behavior_reason_start'] = le.fit_transform(pre_hist_df['hist_user_behavior_reason_start'])
+    pre_hist_df['hist_user_behavior_reason_end'] = le.fit_transform(pre_hist_df['hist_user_behavior_reason_end'])
     session_cols = ['session_id', 'session_position', 'session_length', 'track_id_clean',
                     'skip_1', 'skip_2', 'skip_3', 'not_skipped', 'context_switch',
                     'no_pause_before_play', 'short_pause_before_play',
@@ -200,203 +209,8 @@ def TestPreHistSessionCate(pre_hist_df):
 
     return input_data, input_data_context_id, input_data_start_id, input_data_end_id,input_data_id
 
-
 ###############################################################################
 
-#For v5
-
-elements = [-2,-1,0,1,2]
-probabilities = [0.1,0.25,0.3,0.25,0.1]
-#np.random.choice(elements, 10, p=probabilities)
-
-def ProcessSessionCate(df, if_gen = 0, batch_size = batch_size, sample = 0):
-    df['date'] = pd.to_datetime(df['date'] )
-        
-    df['date_gap'] = df['date'] - pd.Timestamp(2018, 7, 13)
-    df['date_gap'] = df['date_gap'].dt.days
-    
-    
-    df['context_type'] = le_context_type.transform(df['context_type'])
-    df['hist_user_behavior_reason_start'] = le_reason_start.transform(df['hist_user_behavior_reason_start'])
-    df['hist_user_behavior_reason_end'] = le_reason_end.transform(df['hist_user_behavior_reason_end'])
-    session_cols = ['session_id', 'session_position', 'session_length', 'track_id_clean',
-                    'skip_1', 'skip_2', 'skip_3', 'not_skipped', 'context_switch',
-                    'no_pause_before_play', 'short_pause_before_play',
-                    'long_pause_before_play', 'hist_user_behavior_n_seekfwd',
-                    'hist_user_behavior_n_seekback', 'hist_user_behavior_is_shuffle',
-                    'hour_of_day', 'premium', 'context_type',
-                    'hist_user_behavior_reason_start', 'hist_user_behavior_reason_end','date_gap']
-    
-    session_id = np.unique(df['session_id'])    
-    session_position_offset = np.random.choice(elements, len(session_id), p=probabilities)
-    df_offset = pd.DataFrame()
-    df_offset['session_id'] = session_id
-    if sample == 1:
-        df_offset['session_position_offset'] = session_position_offset
-    else:
-        df_offset['session_position_offset'] = 0
-        
-    n0 = df.shape[0]
-        
-    df = pd.merge(df, df_offset, on = 'session_id', how = 'left')
-    df['session_position'] = df['session_position'] + df['session_position_offset']
-    df = df[df['session_position']<=df['session_length']].reset_index(drop=True)
-    df = df[df['session_position']>=1].reset_index(drop=True)
-    
-    n1 = df.shape[0]
-    
-    #print('shrinkage:',n0, n1)
-
-    df['track_id_clean'] = df['track_id_clean'] + 1
-    df['hour_of_day'] = df['hour_of_day']/24
-
-    raw_data = np.array(df[session_cols].values) * 1
-    raw_data = raw_data.astype(np.float)
-
-    input_raw_data = raw_data[raw_data[:,1] * 2 <= raw_data[:, 2], :]
-    output_raw_data = raw_data[raw_data[:,1] * 2 > raw_data[:, 2], :]
-
-    input_raw_data_final_p = np.floor(input_raw_data[:, 2] / 2).astype(np.int)
-    input_raw_data_final_p = 10 - input_raw_data_final_p + input_raw_data[:, 1]
-
-    output_raw_data_first_p = np.floor(output_raw_data[:, 2] / 2).astype(np.int)
-    output_raw_data_first_p = -output_raw_data_first_p + output_raw_data[:, 1]
-
-    n_session = int(np.max(raw_data[:,0])) + 1
-    gc.collect()
-    input_data = -2 * np.ones((n_session * 10, 18))
-    output_data = -2 * np.ones((n_session * 10, 19))
-
-    input_data[:, 17] = n_reason_end - 1
-    output_data[:, 17] = n_reason_end - 1
-    
-    input_data[:, 16] = n_reason_start - 1
-    output_data[:, 16] = n_reason_start - 1
-    
-    input_data[:, 15] = n_context_type - 1
-    output_data[:, 15] = n_context_type - 1
-    
-    '''    
-    output_premium = input_data[:,9,14]    
-    output_premium = np.reshape(output_premium,(len(output_premium),1,1))
-    output_premium = np.tile(output_premium,(1,10,1))
-    '''
-    
-    input_raw_data[:,2] = input_raw_data[:,1]/input_raw_data[:,2]
-    output_raw_data[:,2] = output_raw_data[:,1]/output_raw_data[:,2]
-
-
-    input_data[input_raw_data[:, 0].astype(np.int) * 10 + input_raw_data_final_p.astype(np.int) - 1,
-    :] = input_raw_data[:, 2:20]
-    output_data[output_raw_data[:, 0].astype(np.int) * 10 + output_raw_data_first_p.astype(np.int) - 1,
-    :] = output_raw_data[:, 2:21]
-    input_data = np.reshape(input_data, (n_session, 10, input_data.shape[1]))
-    output_data = np.reshape(output_data, (n_session, 10, output_data.shape[1]))
-    output_data_target = output_data[:, :, 2:13]
-    output_data_target[output_data_target>1] = 1
-    output_data_target[output_data_target < 0] = 0
-    
-    output_date_id = output_data[:, :, 18]
-    
-    #output_data_target[:,:,3] = 1 - output_data_target[:,:,1]   
-    
-    output_data_id = output_data[:,:,1]
-
-    order = np.arange(n_session)
-    random.shuffle(order)
-    
-    if if_gen == 1:
-        order = order[0:int(batch_size*np.floor(n_session/batch_size))]        
-
-    input_data = input_data[order,:,:]  
- 
-    input_data_context_id = input_data[:,:,15]
-    input_data_start_id = input_data[:,:,16]
-    input_data_end_id = input_data[:,:,17]
-
-    input_data = input_data[:,:,range(15)]
-
-    input_data_id = input_data[:,:,1]
-    input_data = np.delete(input_data, 1, 2)
-    output_data_id = output_data_id[order,:]
-    output_data_target = output_data_target[order,:]
-    
-    output_data = output_data[:,:,0]
-    
-    input_data_context_id[input_data_context_id<0] = 0
-    input_data_start_id[input_data_start_id<0] = 0
-    input_data_end_id[input_data_end_id<0] = 0
-    input_data_id[input_data_id<0] = 0
-    output_data_id[output_data_id<0] = 0
-    
-    input_data_context_id = input_data_context_id.astype(int)
-    input_data_start_id = input_data_start_id.astype(int)
-    input_data_end_id = input_data_end_id.astype(int)
-    input_data_id = input_data_id.astype(int)
-    output_data_id = output_data_id.astype(int)
-
-    return input_data, output_data, input_data_context_id, input_data_start_id, input_data_end_id,\
-           input_data_id, output_data_id, output_data_target, output_date_id
-           
-###############################################################################
-
-
-# Specify the train and validation files.
-#train_files = glob.glob(data_path + '*.csv.parquet')
-#len(train_files)
-valid_files = ['Skip_Data/log_0_20180715_000000000000.csv.parquet']
-#train_files = list(set(train_files)-set(valid_files))
-#print(len(train_files))
-
-###############################################################################
-
-# Constructing the validation set.
-
-count = 0
-for file in valid_files:
-    tmp_data = pd.read_parquet(file)
-    input_data_i, output_data_i, input_data_context_id_i, input_data_start_id_i, input_data_end_id_i, \
-    input_data_id_i, output_data_id_i, output_data_target_i = ProcessSessionCate(tmp_data)
-
-    if count == 0:
-        valid_input = input_data_i
-        valid_output = output_data_i
-        valid_input_id = input_data_id_i
-        valid_input_data_context_id = input_data_context_id_i
-        valid_input_data_start_id = input_data_start_id_i
-        valid_input_data_end_id = input_data_end_id_i
-        valid_output_id = output_data_id_i
-        valid_target = output_data_target_i
-    else:
-        valid_input = np.concatenate((valid_input,input_data_i),axis=0)
-        valid_output = np.concatenate((valid_output,output_data_i),axis=0)
-        valid_input_data_context_id = np.concatenate((valid_input_data_context_id,input_data_context_id_i),axis=0)
-        valid_input_data_start_id = np.concatenate((valid_input_data_start_id,input_data_start_id_i),axis=0)
-        valid_input_data_end_id = np.concatenate((valid_input_data_end_id,input_data_end_id_i),axis=0)
-        valid_input_id = np.concatenate((valid_input_id,input_data_id_i),axis=0)
-        valid_output_id = np.concatenate((valid_output_id,output_data_id_i),axis=0)
-        valid_target = np.concatenate((valid_target,output_data_target_i),axis=0)
-
-    count  = count + 1
-    
-input_fea_dim = valid_input.shape[2]
-
-X_valid = {
-   'context': valid_input_data_context_id,
-    'start': valid_input_data_start_id,
-    'end': valid_input_data_end_id,
-    'input_fea': valid_input,
-     'output_fea': valid_output,
-    'input_id': valid_input_id,
-    'output_id': valid_output_id,
-}
-
-Y_valid = valid_target
-
-#hkl.dump(Y_valid, data_path+'Y_valid.hkl', mode='w', compression='gzip')
-
-#hkl.dump(valid_output, data_path+'valid_output.hkl', mode='w', compression='gzip')
-###############################################################################
 
 def tile_tile(X):
     X = K.tile(X, [1,10,1]) 
@@ -575,14 +389,30 @@ def skip_model_5_mtsk_att(cell_size = 350):
 
 model = skip_model_5_mtsk_att()
 
-model.load_weights('Data/skip_net_glove_max_mtsk_more_layer_best_v6.hdf5')
+# model.load_weights('Data/skip_net_glove_max_mtsk_more_layer_best_v6.hdf5')
+model.load_weights('C:/Users/13528/Task 1/Data/skip_net_glove_max_mtsk_more_layer_best_v6.hdf5')          
+
+###############################################################################
+
+
+for item in tqdm(test_files):
+    print(item)
+    preddf = pd.read_parquet(item)
+    print(preddf)
+    prehistdf = pd.read_parquet(test_data_path + 'prehist_' + item[37:]) 
+    print(prehistdf)
+    
+for item in tqdm(test_files):
+    print(item[37:45])
+    print(item)
 
 ###############################################################################
 
 for item in tqdm(test_files):
     preddf = pd.read_parquet(item)
     
-    prehistdf = pd.read_parquet(test_data_path + 'prehist_' + item[15:])   
+#     prehistdf = pd.read_parquet(test_data_path + 'prehist_' + item[15:])
+    prehistdf = pd.read_parquet(test_data_path + 'prehist_' + item[37:])
     
     cols = ['session_id', 'session_position', 'session_length', 'track_id_clean']
     
@@ -607,5 +437,7 @@ for item in tqdm(test_files):
     
     print(np.mean(y_pred))
         
-    hkl.dump(y_pred, data_path+item[15:23]+'_y_pred_mtsk_larger_v6.hkl', mode='w', compression='gzip')
+#     hkl.dump(y_pred, data_path+item[37:45]+'_y_pred_mtsk_larger_v6.hkl', mode='w', compression='gzip')
+    joblib.dump(y_pred, data_path+item[37:45]+'_y_pred_mtsk_larger_v6_new.pkl')
     
+
