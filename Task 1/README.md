@@ -1,4 +1,4 @@
-# Our Codes for the WSDM Cup Skip Prediction Challenge (1st Position on the Final Leaderboard)
+# Our Codes for the WSDM Cup Skip Prediction Challenge
 
  
 
@@ -12,7 +12,7 @@ This repository contains the **Python** source code of our solutions to the WSDM
 
 - Firstly, create three folders `train_fold`, `test_fold`, and `Skip_Data`, and put the decompressed train csv files, test csv files, and song feature files there;
 - Create a new folder `test_pred`  for storing the processed test files
-- Run the `Spotify_Skip_Final_Solution_Data_Preparation` script, note that this script consists of 4 segments, before running the 4th segment, please use the official Glove code at https://github.com/stanfordnlp/GloVe for learning the embeddings from the `glove_data.txt` file generated in previous steps. Glove training parameters are`VOCAB_MIN_COUNT=7`, `VECTOR_SIZE=150`, `MAX_ITER=150` ,`WINDOW_SIZE=10`. This part is quite time consuming, so you may also access the trained embedding from: https://pan.baidu.com/s/1bhJbsGSD7bXf4txmsqaplA
+- Run the `Spotify_Skip_Final_Solution_Data_Preparation` script, note that this script consists of 4 segments, before running the 4th segment, please use the official Glove code at https://github.com/stanfordnlp/GloVe for learning the embeddings from the `glove_data.txt` file generated in previous steps. Glove training parameters are`VOCAB_MIN_COUNT=7`, `VECTOR_SIZE=150`, `MAX_ITER=150` ,`WINDOW_SIZE=10`. This part is quite time consuming, so you may also access the trained embedding from: https://pan.baidu.com/s/1bhJbsGSD7bXf4txmsqaplA; https://drive.google.com/file/d/1LZFI_UpPdfHagLvatmFp8qt5T7SGRj3P/view?usp=sharing
 
 ### Model Fitting
 
